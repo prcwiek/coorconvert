@@ -28,7 +28,7 @@ A .csv file with converted coordinates can be downloaded as .csv.
 
 Download is possible in .csv format.
 
-## Acceptable formats for geographical coordinates
+### Acceptable formats for geographical coordinates
 
 -   Format d: 16.4241, 54.4472
 -   Format dms: 162526.9, 542649.9
