@@ -228,7 +228,7 @@ server <- function(input, output, session) {
     output$about <- renderText({
         paste0('<h3>Simple coordinates converter for the area of Poland</h3>
         Applications allows to convert coordinates between different systems for Poland."<br>
-        <p>Only csv input files are accepted with the columns names in the first row:<br>
+        <p>Only csv and tsv input files are accepted with the columns names in the first row:<br>
         <ul>
         <li>label</li>
         <li>lon</li>
