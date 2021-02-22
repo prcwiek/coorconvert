@@ -24,6 +24,15 @@ coord_systems <- c("ETRS89 / Poland CS92 EPSG: 2180" = "2180",
                    "WGS84 - World Geodetic System 1984 EPSG: 4326 Format: d" = "4326",
                    "WGS84 - World Geodetic System 1984 EPSG: 4326 Format: dms" = "4326")
 
+convert_from_dms <- function(din) {
+    dout_b <- c(1:nrow(din))
+    dout_b <- str_detect(din$lon, pattern = "^\\d{6}.")
+    din$lon[dout_b] <- as.numeric(str_sub(din$lon[dout_b], 1, 2)) + as.numeric(str_sub(din$lon[dout_b], 3, 4)) / 60 + as.numeric(str_sub(din$lon[dout_b], 5, -1)) / 3600
+    din$lon[!dout_b] <- as.numeric(str_sub(din$lon[!dout_b], 1, 2)) + as.numeric(str_sub(din$lon[!dout_b], 3, 4)) / 60 + as.numeric(str_sub(din$lon[!dout_b], 5, -1)) / 3600
+    din$lat = as.numeric(str_sub(din$lat, 1, 2)) + as.numeric(str_sub(din$lat, 3, 4)) / 60 + as.numeric(str_sub(din$lat, 5, -1)) / 3600
+    din
+}
+
 ui <- tagList(
     
     shinyjs::useShinyjs(),
@@ -33,7 +42,8 @@ ui <- tagList(
                tabPanel("Coordinates", sidebarLayout(
                             sidebarPanel(width = 3,
                                          fileInput("filec_in", label = h5("Choose csv file with input coordinates"),
-                                                   accept = c("text/csv", ".csv")),
+                                                   accept = c("text/csv", "text/comma-separated-values",
+                                                              "text/tab-separated-values", ".csv", ".tsv")),
                                          selectInput("input_coord", label = h5("Select input coordinates system"), 
                                                      choices = list("ETRS89 / Poland CS92 EPSG: 2180" = 2180, 
                                                                     "ETRS89 / Poland CS2000 zone 5 EPSG: 2176" = 2176,
@@ -72,7 +82,7 @@ ui <- tagList(
                             mainPanel(width = 8,
                                       fluidRow(
                                           column(3, "Input coordinates", tableOutput("coord_in")),
-                                          column(1),
+                                          column(2),
                                           column(3, "Transformed coordinates", tableOutput(("coord_out")))
                                       ))
                 )),
@@ -103,17 +113,14 @@ server <- function(input, output, session) {
         if(is.null(input$filec_in))
             return(NULL)
         
-        dc_import <- read_csv(input$filec_in$datapath)
-        
-        if(input$input_coord == "4326_dms") {
-            dc_import_nr <- c(1:nrow(dc_import))
-            dc_import_nr <- str_detect(dc_import$lon, pattern = "^\\d{6}.")
-            dc_import$lon[dc_import_nr] <- as.numeric(str_sub(dc_import$lon[dc_import_nr], 1, 2)) + as.numeric(str_sub(dc_import$lon[dc_import_nr], 3, 4)) / 60 + as.numeric(str_sub(dc_import$lon[dc_import_nr], 5, -1)) / 3600
-            dc_import$lon[!dc_import_nr] <- as.numeric(str_sub(dc_import$lon[!dc_import_nr], 1, 2)) + as.numeric(str_sub(dc_import$lon[!dc_import_nr], 3, 4)) / 60 + as.numeric(str_sub(dc_import$lon[!dc_import_nr], 5, -1)) / 3600
-            
-            dc_import$lat = as.numeric(str_sub(dc_import$lat, 1, 2)) + as.numeric(str_sub(dc_import$lat, 3, 4)) / 60 + as.numeric(str_sub(dc_import$lat, 5, -1)) / 3600
+        if(str_detect(input$filec_in, ".csv$")){
+            dc_import <- read_csv(input$filec_in$datapath)    
         }
         
+        if(str_detect(input$filec_in, ".tsv$")){
+            dc_import <- read_tsv(input$filec_in$datapath)    
+        }
+
         dc_in$data <- dc_import
         
         shinyjs::enable("downloadconverted")
@@ -141,7 +148,12 @@ server <- function(input, output, session) {
         # output coordinates system
         epsg_out <- as.numeric(input$output_coord)
         
-        dout <- st_as_sf(dc_in$data, coords = c("lon", "lat"), crs = epsg_in)
+        # convert coordinates from format dms
+        if(input$input_coord == "4326_dms") {
+            dout <- st_as_sf(convert_from_dms(dc_in$data), coords = c("lon", "lat"), crs = epsg_in)
+        } else {
+            dout <- st_as_sf(dc_in$data, coords = c("lon", "lat"), crs = epsg_in)    
+        }
         
         dout <- st_transform(dout, crs = epsg_out)
         
@@ -171,7 +183,11 @@ server <- function(input, output, session) {
             } else (
                 epsg_in <- as.numeric(input$input_coord)    
             )
-            dplot <- st_as_sf(dc_in$data, coords = c("lon", "lat"), crs = epsg_in)
+            if(input$input_coord == "4326_dms"){
+                dplot <- st_as_sf(convert_from_dms(dc_in$data), coords = c("lon", "lat"), crs = epsg_in)
+            } else {
+                dplot <- st_as_sf(dc_in$data, coords = c("lon", "lat"), crs = epsg_in)    
+            }
         } else {
             # input coordinates system
             epsg_out <- as.numeric(input$output_coord)
