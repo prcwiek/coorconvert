@@ -116,11 +116,11 @@ server <- function(input, output, session) {
         if(is.null(input$filec_in))
             return(NULL)
         
-        if(str_detect(input$filec_in, ".csv$")){
+        if(str_detect(input$filec_in$name, ".csv$")){
             dc_import <- read_csv(input$filec_in$datapath)    
         }
         
-        if(str_detect(input$filec_in, ".tsv$")){
+        if(str_detect(input$filec_in$name, ".tsv$")){
             dc_import <- read_tsv(input$filec_in$datapath)    
         }
 
