@@ -1,5 +1,7 @@
 # coorconvert
 
+[![](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+
 Simple coordinates converter for the area of Poland.
 
 Applications allows to convert coordinates between different systems for Poland." Only csv and tsv input files are accepted. with the columns names in the first row:
