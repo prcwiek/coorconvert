@@ -4,6 +4,7 @@
 library(dplyr)
 library(leaflet)
 library(readr)
+library(rgdal)
 library(sf)
 library(shiny)
 library(shinyjs)
@@ -90,7 +91,9 @@ ui <- tagList(
                    sidebarPanel(width = 3,
                                 radioButtons("radio_in_out", label = h5("Select coordinates to use"),
                                              choices = list("Input coordinates" = 1, "Transformed coordinates" = 2), 
-                                             selected = 1)),
+                                             selected = 1),
+                                p(),br(),
+                                downloadButton("downloadkml", "Download kml file")),
                    mainPanel(width = 8, 
                              tags$style(type = "text/css", "#coordMap {height: calc(100vh - 80px) !important;}"),
                              leafletOutput("coordMap"))
@@ -225,6 +228,44 @@ server <- function(input, output, session) {
         }
     )
     
+    # Download kml files
+    output$downloadkml <- downloadHandler(
+        
+        filename = function() {
+            fname <- names(coord_systems)[coord_systems == input$output_coord]
+            fname <- gsub(" ", "_", fname)
+            fname <- gsub("/", "", fname)
+            fname <- gsub("__", "_", fname)
+            paste0(gsub(".[a-zA-Z]+$", "", input$filec_in$name), "_", fname, ".kml")
+        },
+        
+        content = function(file) {
+            if(is.null(dc_in$data))
+                return(NULL)
+            
+            if(input$radio_in_out == 1) {
+                # input coordinates system
+                if(input$input_coord == "4326_d" | input$input_coord == "4326_dms") {
+                    epsg_in <- 4326
+                } else (
+                    epsg_in <- as.numeric(input$input_coord)    
+                )
+                if(input$input_coord == "4326_dms"){
+                    dplot <- st_as_sf(convert_from_dms(dc_in$data), coords = c("lon", "lat"), crs = epsg_in)
+                } else {
+                    dplot <- st_as_sf(dc_in$data, coords = c("lon", "lat"), crs = epsg_in)    
+                }
+            } else {
+                # input coordinates system
+                epsg_out <- as.numeric(input$output_coord)
+                dplot <- st_as_sf(dc_out$data, coords = c("lon", "lat"), crs = epsg_out)
+            }
+            
+            dplot <- st_transform(dplot, crs =4326)
+            
+            writeOGR(sf::as_Spatial(dplot), layer = "dplot", dsn = file, driver = "KML", dataset_options = c("label"))
+        }
+    )
     output$about <- renderText({
         paste0('<h3>Simple coordinates converter for the area of Poland</h3>
         Applications allows to convert coordinates between different systems for Poland."<br>
