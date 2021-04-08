@@ -197,13 +197,24 @@ server <- function(input, output, session) {
             dplot <- st_as_sf(dc_out$data, coords = c("lon", "lat"), crs = epsg_out)
         }
         
-        dplot <- st_transform(dplot, crs =4326)
+        dplot <- st_transform(dplot, crs = 4326)
         
         lon_center <- mean(st_coordinates(dplot)[,1])
         lat_center <- mean(st_coordinates(dplot)[,2])
         
+        lon_dist <- abs(max(st_coordinates(dplot)[,1]) - min(st_coordinates(dplot)[,1]))
+        lat_dist <- abs(max(st_coordinates(dplot)[,2]) - min(st_coordinates(dplot)[,2]))
+        
+        if (lon_dist < 0 | lat_dist < 0) {
+            z_scale <- 13
+        } else if (lon_dist > 1.0 | lat_dist >1.0) {
+            z_scale <- 9
+        } else {
+            z_scale <- 11
+        }
+        
         leaflet() %>% 
-            setView(lng = lon_center, lat = lat_center, zoom = 13) %>% 
+            setView(lng = lon_center, lat = lat_center, zoom = z_scale) %>% 
             addCircles(data = dplot) %>% 
             addLabelOnlyMarkers(
                 label = ~lapply(label, htmltools::htmlEscape),
