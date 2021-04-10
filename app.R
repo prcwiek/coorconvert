@@ -205,12 +205,10 @@ server <- function(input, output, session) {
         lon_dist <- abs(max(st_coordinates(dplot)[,1]) - min(st_coordinates(dplot)[,1]))
         lat_dist <- abs(max(st_coordinates(dplot)[,2]) - min(st_coordinates(dplot)[,2]))
         
-        if (lon_dist < 0 | lat_dist < 0) {
-            z_scale <- 13
-        } else if (lon_dist > 1.0 | lat_dist >1.0) {
-            z_scale <- 9
+        if (lon_dist > 1.0 | lat_dist >1.0) {
+            if (lon_dist > lat_dist) z_scale <- round(lon_dist * 7, 0) else z_scale <- round(lat_dist * 7, 0)
         } else {
-            z_scale <- 11
+            if (1/lon_dist > 1/lat_dist) z_scale <- round(1 / lon_dist / 6, 0) else z_scale <- round(1 / lat_dist / 6, 0)
         }
         
         leaflet() %>% 
