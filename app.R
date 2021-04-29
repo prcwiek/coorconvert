@@ -61,6 +61,7 @@ ui <- tagList(
                                                                     "WGS84 - World Geodetic System 1984 EPSG: 4326 Format: d only" = "4326_d",
                                                                     "WGS84 - World Geodetic System 1984 EPSG: 4326 Format: dms" = "4326_dms"), 
                                                      selected = 2180),
+                                         actionButton("switch_cols", "Switch lat and lot columns in input"),
                                          selectInput("output_coord", label = h5("Select output coordinates system"), 
                                                      choices = list("ETRS89 / Poland CS92 EPSG: 2180" = 2180, 
                                                                     "ETRS89 / Poland CS2000 zone 5 EPSG: 2176" = 2176,
@@ -124,9 +125,28 @@ server <- function(input, output, session) {
             dc_import <- read_tsv(input$filec_in$datapath)    
         }
 
+        if (ncol(dc_import) > 3) {
+            showModal(modalDialog(title = "File upload error",
+                                  "File has more than 3 columns",
+                                  easyClose = TRUE, footer = NULL))
+           return(NULL)           
+        }
+
+        if (ncol(dc_import) == 3) {
+            if (sum(str_detect(names(dc_import), pattern = ("(label|lat|lon)"))) != 3) {
+                names(dc_import) <- c("label", "lon", "lat")
+            }
+        } else if (ncol(dc_import) == 2) {
+            names(dc_import) <- c("lon", "lat")
+            dc_import <- dc_import %>% 
+                mutate(label = seq(1:nrow(dc_import))) %>% 
+                select(label, lon, lat)
+        }
+        
         dc_in$data <- dc_import
         
         shinyjs::enable("downloadconverted")
+        shinyjs::enable("switch_cols")
         
     })
 
@@ -205,10 +225,20 @@ server <- function(input, output, session) {
         lon_dist <- abs(max(st_coordinates(dplot)[,1]) - min(st_coordinates(dplot)[,1]))
         lat_dist <- abs(max(st_coordinates(dplot)[,2]) - min(st_coordinates(dplot)[,2]))
         
-        if (lon_dist > 1.0 | lat_dist >1.0) {
+        if (lon_dist == 0 | lat_dist == 0) {
+            z_scale <- 8
+        } else if (lon_dist > 1.0 | lat_dist > 1.0) {
             if (lon_dist > lat_dist) z_scale <- round(lon_dist * 7, 0) else z_scale <- round(lat_dist * 7, 0)
+        } else if (lon_dist > 0.5 | lat_dist > 0.5) {
+            if (lon_dist > lat_dist) z_scale <- round(lon_dist * 14, 0) else z_scale <- round(lat_dist * 14, 0)
+            #if (1/lon_dist > 1/lat_dist) z_scale <- round(1 / lon_dist / 6, 0) else z_scale <- round(1 / lat_dist / 6, 0)
+        } else if (lon_dist > 0.25 | lat_dist > 0.25) {
+            if (lon_dist > lat_dist) z_scale <- round(lon_dist * 21, 0) else z_scale <- round(lat_dist * 21, 0)
+            #if (1/lon_dist > 1/lat_dist) z_scale <- round(1 / lon_dist / 6, 0) else z_scale <- round(1 / lat_dist / 6, 0)
+        } else if (lon_dist < 0.1 | lat_dist < 0.1) {
+            z_scale <- 14
         } else {
-            if (1/lon_dist > 1/lat_dist) z_scale <- round(1 / lon_dist / 6, 0) else z_scale <- round(1 / lat_dist / 6, 0)
+            z_scale <- 6
         }
         
         leaflet() %>% 
@@ -275,6 +305,15 @@ server <- function(input, output, session) {
             writeOGR(sf::as_Spatial(dplot), layer = "dplot", dsn = file, driver = "KML", dataset_options = c("label"))
         }
     )
+    
+    observeEvent(input$switch_cols, {
+        dc_in$data <- dc_in$data %>% 
+            mutate(lon2 = lat,
+                   lat2 = lon) %>% 
+            select(label, lon2, lat2)
+        names(dc_in$data) <- c("label", "lon", "lat")
+    })
+    
     output$about <- renderText({
         paste0('<h3>Simple coordinates converter for the area of Poland</h3>
         Applications allows to convert coordinates between different systems for Poland."<br>
@@ -297,6 +336,7 @@ server <- function(input, output, session) {
     
     # Disable buttons at start
     shinyjs::disable("downloadconverted")
+    shinyjs::disable("switch_cols")
     
     # End application when a window or a tab is closed
     session$onSessionEnded(stopApp)
