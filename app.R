@@ -3,6 +3,7 @@
 
 library(dplyr)
 library(leaflet)
+library(maptools)
 library(readr)
 library(rgdal)
 library(sf)
@@ -110,8 +111,9 @@ server <- function(input, output, session) {
     
     # Output coordinates, after transformation
     dc_out <- reactiveValues(data = NULL)
-    
-    # load coordinates
+
+
+    # load coordinates --------------------------------------------------------
     observeEvent(input$filec_in,{
         
         if(is.null(input$filec_in))
@@ -150,12 +152,12 @@ server <- function(input, output, session) {
         
     })
 
-    # show table with input coordinates
+    # show table with input coordinates ---------------------------------------
     output$coord_in <- renderTable(digits = 4, {
         dc_in$data        
     })
-    
-    # show table with transformed coordinates
+
+    # show table with transformed coordinates ---------------------------------
     output$coord_out <- renderTable(digits = 4,{
         
         if(is.null(dc_in$data))
@@ -193,8 +195,8 @@ server <- function(input, output, session) {
         dc_out$data
         
     })
-    
-    # show map
+
+    # show map ----------------------------------------------------------------
     output$coordMap <- renderLeaflet({
         if(is.null(dc_in$data))
             return(NULL)
@@ -266,8 +268,8 @@ server <- function(input, output, session) {
             write_csv(dc_out$data, file)
         }
     )
-    
-    # Download kml files
+
+    # Download kml files ------------------------------------------------------
     output$downloadkml <- downloadHandler(
         
         filename = function() {
@@ -294,15 +296,20 @@ server <- function(input, output, session) {
                 } else {
                     dplot <- st_as_sf(dc_in$data, coords = c("lon", "lat"), crs = epsg_in)    
                 }
+                kmldescription <- "Created from input coordinates"
             } else {
-                # input coordinates system
+                # output coordinates system
                 epsg_out <- as.numeric(input$output_coord)
                 dplot <- st_as_sf(dc_out$data, coords = c("lon", "lat"), crs = epsg_out)
+                kmldescription <- "Created from converted coordinates"
             }
             
-            dplot <- st_transform(dplot, crs =4326)
+            Points <- sf::as_Spatial(st_transform(dplot, crs =4326))
+            icon <- "http://maps.google.com/mapfiles/ms/micons/pink-dot.png"
+            kmlname <- gsub(".[a-zA-Z]+$", "", input$filec_in$name)
             
-            writeOGR(sf::as_Spatial(dplot), layer = "dplot", dsn = file, driver = "KML", dataset_options = c("label"))
+            kmlPoints(Points, kmlfile = file, name = Points$label, icon = icon,
+                      kmlname = kmlname, kmldescription = kmldescription)
         }
     )
     
