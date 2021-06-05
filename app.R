@@ -330,7 +330,7 @@ server <- function(input, output, session) {
         <li>lat</li>
         </ul>
         where lon is longitude and lat is latitude.<br>
-        Download is possible in .csv format.
+        Download is possible in .csv or .tsv format.
         <h4>Acceptable formats for geographical coordinates</h4>
         <ul>
         <li>Format d: 16.4241, 54.4472 </li>
