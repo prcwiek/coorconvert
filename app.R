@@ -61,6 +61,7 @@ ui <- tagList(
                                                                     "WGS84 - World Geodetic System 1984 EPSG: 4326 Format: d only" = "4326_d",
                                                                     "WGS84 - World Geodetic System 1984 EPSG: 4326 Format: dms" = "4326_dms"), 
                                                      selected = 2180),
+                                         textInput("epsg_input", label = h5("or enter EPSG code:"), value = ""),
                                          actionButton("switch_cols", "Switch lat and lot columns in input"),
                                          selectInput("output_coord", label = h5("Select output coordinates system"), 
                                                      choices = list("ETRS89 / Poland CS92 EPSG: 2180" = 2180, 
@@ -77,6 +78,7 @@ ui <- tagList(
                                                                     "WGS 84 / UTM zone 34N EPSG: 32634" = 32634,
                                                                     "WGS84 - World Geodetic System 1984 EPSG: 4326" = 4326), 
                                                      selected = 32633),
+                                         textInput("epsg_output", label = h5("or enter EPSG code:"), value = ""),
                                          p(),br(),
                                          downloadButton("downloadconverted", "Download converted coordinates")
                                          
