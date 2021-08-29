@@ -59,9 +59,10 @@ ui <- tagList(
                                                                     "WGS 84 / UTM zone 33N EPSG: 32633" = 32633,
                                                                     "WGS 84 / UTM zone 34N EPSG: 32634" = 32634,
                                                                     "WGS84 - World Geodetic System 1984 EPSG: 4326 Format: d only" = "4326_d",
-                                                                    "WGS84 - World Geodetic System 1984 EPSG: 4326 Format: dms" = "4326_dms"), 
+                                                                    "WGS84 - World Geodetic System 1984 EPSG: 4326 Format: dms" = "4326_dms",
+                                                                    "Other" = "other"),
                                                      selected = 2180),
-                                         textInput("epsg_input", label = h5("or enter EPSG code:"), value = ""),
+                                         numericInput("epsg_input", label = h5("or enter other EPSG code:"), value = 32633),
                                          actionButton("switch_cols", "Switch lat and lot columns in input"),
                                          selectInput("output_coord", label = h5("Select output coordinates system"), 
                                                      choices = list("ETRS89 / Poland CS92 EPSG: 2180" = 2180, 
@@ -76,9 +77,10 @@ ui <- tagList(
                                                                     "Pulkovo 1942(58) / Poland 1965 zone V EPSG: 2175" = 2175,
                                                                     "WGS 84 / UTM zone 33N EPSG: 32633" = 32633,
                                                                     "WGS 84 / UTM zone 34N EPSG: 32634" = 32634,
-                                                                    "WGS84 - World Geodetic System 1984 EPSG: 4326" = 4326), 
+                                                                    "WGS84 - World Geodetic System 1984 EPSG: 4326" = 4326,
+                                                                    "Other" = "other"),
                                                      selected = 32633),
-                                         textInput("epsg_output", label = h5("or enter EPSG code:"), value = ""),
+                                         numericInput("epsg_output", label = h5("or enter other EPSG code:"), value = 32634),
                                          p(),br(),
                                          downloadButton("downloadconverted", "Download converted coordinates")
                                          
@@ -165,14 +167,20 @@ server <- function(input, output, session) {
             return(NULL)
         
         # input coordinates system
-        if(input$input_coord == "4326_d" | input$input_coord == "4326_dms") {
+        if (input$input_coord == "other") {
+            epsg_in <- input$epsg_input
+        } else if(input$input_coord == "4326_d" | input$input_coord == "4326_dms") {
             epsg_in <- 4326
-        } else (
+        } else {
             epsg_in <- as.numeric(input$input_coord)    
-        )
+        }
         
         # output coordinates system
-        epsg_out <- as.numeric(input$output_coord)
+        if (input$output_coord == "other") {
+            epsg_out <- input$epsg_output
+        } else {
+            epsg_out <- as.numeric(input$output_coord)            
+        }
         
         # convert coordinates from format dms
         if(input$input_coord == "4326_dms") {
@@ -206,17 +214,25 @@ server <- function(input, output, session) {
             # input coordinates system
             if(input$input_coord == "4326_d" | input$input_coord == "4326_dms") {
                 epsg_in <- 4326
-            } else (
-                epsg_in <- as.numeric(input$input_coord)    
-            )
+            } else {
+                if (input$input_coord == "other") {
+                    epsg_in <- input$epsg_input
+                } else {
+                    epsg_in <- as.numeric(input$input_coord)    
+                }
+            }
             if(input$input_coord == "4326_dms"){
                 dplot <- st_as_sf(convert_from_dms(dc_in$data), coords = c("lon", "lat"), crs = epsg_in)
             } else {
                 dplot <- st_as_sf(dc_in$data, coords = c("lon", "lat"), crs = epsg_in)    
             }
         } else {
-            # input coordinates system
-            epsg_out <- as.numeric(input$output_coord)
+            # output coordinates system
+            if (input$output_coord == "other") {
+                epsg_out <- input$epsg_output
+            } else {
+                epsg_out <- as.numeric(input$output_coord)            
+            }
             dplot <- st_as_sf(dc_out$data, coords = c("lon", "lat"), crs = epsg_out)
         }
         
@@ -290,7 +306,11 @@ server <- function(input, output, session) {
                 if(input$input_coord == "4326_d" | input$input_coord == "4326_dms") {
                     epsg_in <- 4326
                 } else (
-                    epsg_in <- as.numeric(input$input_coord)    
+                    if (input$input_coord == "other") {
+                        epsg_in <- input$epsg_input
+                    } else {
+                        epsg_in <- as.numeric(input$input_coord)    
+                    }
                 )
                 if(input$input_coord == "4326_dms"){
                     dplot <- st_as_sf(convert_from_dms(dc_in$data), coords = c("lon", "lat"), crs = epsg_in)
@@ -300,7 +320,11 @@ server <- function(input, output, session) {
                 kmldescription <- "Created from input coordinates"
             } else {
                 # output coordinates system
-                epsg_out <- as.numeric(input$output_coord)
+                if (input$output_coord == "other") {
+                    epsg_out <- input$epsg_output
+                } else {
+                    epsg_out <- as.numeric(input$output_coord)            
+                }
                 dplot <- st_as_sf(dc_out$data, coords = c("lon", "lat"), crs = epsg_out)
                 kmldescription <- "Created from converted coordinates"
             }
