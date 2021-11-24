@@ -123,11 +123,11 @@ server <- function(input, output, session) {
             return(NULL)
         
         if(str_detect(input$filec_in$name, ".csv$")){
-            dc_import <- read_csv(input$filec_in$datapath)    
+            dc_import <- read_csv(input$filec_in$datapath, show_col_types = FALSE)    
         }
         
         if(str_detect(input$filec_in$name, ".tsv$")){
-            dc_import <- read_tsv(input$filec_in$datapath)    
+            dc_import <- read_tsv(input$filec_in$datapath, show_col_types = FALSE)    
         }
 
         if (ncol(dc_import) > 3) {
@@ -329,7 +329,7 @@ server <- function(input, output, session) {
                 kmldescription <- "Created from converted coordinates"
             }
             
-            Points <- sf::as_Spatial(st_transform(dplot, crs =4326))
+            Points <- sf::as_Spatial(st_transform(dplot, crs = 4326))
             icon <- "http://maps.google.com/mapfiles/ms/micons/pink-dot.png"
             kmlname <- gsub(".[a-zA-Z]+$", "", input$filec_in$name)
             
@@ -364,6 +364,26 @@ server <- function(input, output, session) {
         </ul>
         '
         )
+    })
+    
+
+    # change select value -----------------------------------------------------
+    observe({
+      
+      if (input$input_coord != "other") {
+        if (input$input_coord == "4326_d" | input$input_coord == "4326_dms") {
+          updateNumericInput(session, "epsg_input", value = 4326)  
+        } else {
+          updateNumericInput(session, "epsg_input", value = input$input_coord)    
+        }
+        
+      }
+      
+      if (input$output_coord != "other") {
+        updateNumericInput(session, "epsg_output", value = input$output_coord)
+      }
+      
+      
     })
     
     # Disable buttons at start
