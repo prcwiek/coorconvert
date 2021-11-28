@@ -97,6 +97,13 @@ ui <- tagList(
                                 radioButtons("radio_in_out", label = h5("Select coordinates to use"),
                                              choices = list("Input coordinates" = 1, "Transformed coordinates" = 2), 
                                              selected = 1),
+                                radioButtons("icon_out", label = h5("Select icon"),
+                                             choiceNames = list(HTML('<img src="http://maps.google.com/mapfiles/ms/micons/pink-dot.png" width="20" height="20">'),
+                                                                HTML('<img src="http://maps.google.com/mapfiles/ms/micons/ylw-pushpin.png" width="20" height="20">'),
+                                                                HTML('<img src="http://maps.google.com/mapfiles/kml/pal4/icon25.png" width="20" height="20">')),
+                                             choiceValues = list("pink_dot",
+                                                                 "ylw_pushpin",
+                                                                 "icon_25")),
                                 p(),br(),
                                 downloadButton("downloadkml", "Download kml file")),
                    mainPanel(width = 8, 
@@ -330,7 +337,16 @@ server <- function(input, output, session) {
             }
             
             Points <- sf::as_Spatial(st_transform(dplot, crs = 4326))
-            icon <- "http://maps.google.com/mapfiles/ms/micons/pink-dot.png"
+            
+            # select icon
+            if (input$icon_out == "pink_dot") {
+              icon <- "http://maps.google.com/mapfiles/ms/micons/pink-dot.png"
+            } else if (input$icon_out == "ylw_pushpin") {
+              icon <- "http://maps.google.com/mapfiles/ms/micons/ylw-pushpin.png"
+            } else {
+              icon <- "http://maps.google.com/mapfiles/kml/pal4/icon25.png"
+            }
+
             kmlname <- gsub(".[a-zA-Z]+$", "", input$filec_in$name)
             
             kmlPoints(Points, kmlfile = file, name = Points$label, icon = icon,
