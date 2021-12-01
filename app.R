@@ -97,7 +97,7 @@ ui <- tagList(
                                 radioButtons("radio_in_out", label = h5("Select coordinates to use"),
                                              choices = list("Input coordinates" = 1, "Transformed coordinates" = 2), 
                                              selected = 1),
-                                radioButtons("icon_out", label = h5("Select icon"),
+                                radioButtons("icon_out", label = h5("Select icon to use in a kml file"),
                                              choiceNames = list(HTML('<img src="http://maps.google.com/mapfiles/ms/micons/pink-dot.png" width="20" height="20">'),
                                                                 HTML('<img src="http://maps.google.com/mapfiles/ms/micons/ylw-pushpin.png" width="20" height="20">'),
                                                                 HTML('<img src="http://maps.google.com/mapfiles/kml/pal4/icon25.png" width="20" height="20">')),
@@ -390,22 +390,27 @@ server <- function(input, output, session) {
         if (input$input_coord == "4326_d" | input$input_coord == "4326_dms") {
           updateNumericInput(session, "epsg_input", value = 4326)  
         } else {
-          updateNumericInput(session, "epsg_input", value = input$input_coord)    
+          updateNumericInput(session, "epsg_input", value = input$input_coord)
         }
-        
+        shinyjs::disable("epsg_input")
+      } else {
+        shinyjs::enable("epsg_input")
       }
       
       if (input$output_coord != "other") {
         updateNumericInput(session, "epsg_output", value = input$output_coord)
+        shinyjs::disable("epsg_output")
+      } else {
+        shinyjs::enable("epsg_output")
       }
       
       
     })
     
-    # Disable buttons at start
+    # Disable buttons at the start
     shinyjs::disable("downloadconverted")
     shinyjs::disable("switch_cols")
-    
+
     # End application when a window or a tab is closed
     session$onSessionEnded(stopApp)
     
