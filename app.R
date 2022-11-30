@@ -38,7 +38,7 @@ ui <- tagList(
     
     shinyjs::useShinyjs(),
     
-    navbarPage(theme = bslib::bs_theme(version = 4, bootswatch = "cerulean"),
+    navbarPage(theme = bslib::bs_theme(version = 5, bootswatch = "cerulean"),
                title = "Coordinates Converter",
                tabPanel("Coordinates", sidebarLayout(
                             sidebarPanel(width = 3,
