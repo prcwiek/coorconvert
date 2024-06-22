@@ -346,13 +346,11 @@ server <- function(input, output, session) {
             } else {
               icon <- "http://maps.google.com/mapfiles/kml/pal4/icon25.png"
             }
-            icon_style <- paste0("SYMBOL=", icon)
 
             kmlname <- paste0(gsub(".[a-zA-Z]+$", "", input$filec_in$name), ".kml")
             kmlname <- gsub("-", "_", kmlname)
             
-            st_write(obj = points_sf, dsn = kmlname, driver = "kml",
-                     dataset_options = c(icon_style))
+            st_write(obj = points_sf, dsn = kmlname, driver = "kml")
         }
     )
     
