@@ -3,7 +3,6 @@
 
 library(dplyr)
 library(leaflet)
-library(maptools)
 library(readr)
 library(sf)
 library(shiny)
@@ -337,6 +336,7 @@ server <- function(input, output, session) {
             }
             
             Points <- sf::as_Spatial(st_transform(dplot, crs = 4326))
+            points_sf <- sf::st_as_sf(Points)
             
             # select icon
             if (input$icon_out == "pink_dot") {
@@ -346,11 +346,13 @@ server <- function(input, output, session) {
             } else {
               icon <- "http://maps.google.com/mapfiles/kml/pal4/icon25.png"
             }
+            icon_style <- paste0("SYMBOL=", icon)
 
-            kmlname <- gsub(".[a-zA-Z]+$", "", input$filec_in$name)
+            kmlname <- paste0(gsub(".[a-zA-Z]+$", "", input$filec_in$name), ".kml")
+            kmlname <- gsub("-", "_", kmlname)
             
-            kmlPoints(Points, kmlfile = file, name = Points$label, icon = icon,
-                      kmlname = kmlname, kmldescription = kmldescription)
+            st_write(obj = points_sf, dsn = kmlname, driver = "kml",
+                     dataset_options = c(icon_style))
         }
     )
     
