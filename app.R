@@ -350,7 +350,42 @@ server <- function(input, output, session) {
             kmlname <- paste0(gsub(".[a-zA-Z]+$", "", input$filec_in$name), ".kml")
             kmlname <- gsub("-", "_", kmlname)
             
-            st_write(obj = points_sf, dsn = kmlname, driver = "kml")
+            st_write(obj = points_sf, dsn = kmlname, driver = "kml", append = FALSE)
+            
+            # add icon 
+            # read kml as a text file
+            tx <- readChar(kmlname, file.info(kmlname)$size)
+            # check if <SimpleField> exists
+            if (str_detect(tx, pattern = "</SimpleField>\n")) {
+              # create icon_point style
+              tx <- str_replace(tx,
+                                pattern = "<Folder>",
+                                replacement = paste0('\n<Style id="icon_point">\n\t\t<IconStyle>\n\t\t\t<scale>1.2</scale>\n\t\t\t<Icon>',
+                                                    '<href>',icon,'</href>\n',
+                                                     '\t\t\t</Icon>\n\t\t\t<hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>',
+                                                     '\n\t\t</IconStyle>\n\t\t<ListStyle></ListStyle>\n</Style>\n\n',
+                                                     '<Folder>'))
+              # add icon_point style to placemarks
+              tx <- str_replace_all(tx,
+                                pattern = "<Placemark>\n", 
+                                replacement = paste0("<Placemark>\n",
+                                                     '\t<styleUrl>#icon_point</styleUrl>\n'))
+              # check if name exists
+              if (str_detect(tx, pattern = "<Schema name=")) {
+                tname <- str_sub(str_extract(str_extract(b, pattern = "^<Schema name[:graph:]+\\s"), pattern = "\"\\w+"),
+                                 start = 2)
+                tdocument <- str_extract(tx, "<Document\\s[:graph:]+\n") 
+                write(tx, "test_doc.kml")
+                tx <- str_replace(tx,
+                                  pattern = tdocument,
+                                  replacement = paste0(tdocument,
+                                                       "\t<name>", tname, "</name>\n"))
+
+              }
+              
+              # save modified kml file
+              write(tx, kmlname)
+            }
         }
     )
     
