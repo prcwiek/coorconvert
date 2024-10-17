@@ -42,6 +42,8 @@ coorconvert.Rproj
 # folders
 other/
 rsconnect/
+*.html
+
 
 
 
